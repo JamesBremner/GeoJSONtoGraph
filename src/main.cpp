@@ -13,11 +13,7 @@ class cEdge
 public:
     vertex_t v1, v2;
 
-    void display()
-    {
-        std::cout << v1.first << " " << v1.second << ", " 
-            << v2.first << " " << v2.second;
-    }
+    void display();
 };
 class cLineString
 {
@@ -25,17 +21,11 @@ public:
     std::vector<cEdge> myEdge;
     std::string myInput;
 
-    void display()
-    {
-        std::cout << myInput 
-            << "\nhas edges:\n";
-        for (auto &e : myEdge)
-        {
-            e.display();
-            std::cout << "\n";
-        }
-        std::cout << "\n";
-    }
+    cLineString( const std::string& line)
+    : myInput( line )
+    {}
+    void display();
+    void extractEdges();
 };
 class cSolution
 {
@@ -48,43 +38,13 @@ public:
             "{\"type\": \"Feature\", \"properties\": {\"id\": 3}, \"geometry\": { \"type\": \"LineString\", \"coordinates\": [ [ 147.0, -4.8 ], [ 144.73, 0.0 ] ] } }"};
         myInput = input;
     }
-    cLineString extractLocation(const std::string &line)
-    {
-        cLineString ret;
-        cEdge edge;
-        int p = line.find("[");
-        bool first = true;
-        while (true)
-        {
-            auto dbg = line.substr(p + 1);
-            p = line.find("[", p + 1);
-            if (p == -1)
-                break;
-            if (first)
-            {
-                first = false;
-                edge.v1.first = atof(line.substr(p + 1).c_str());
-                p = line.find(",", p + 1);
-                edge.v1.second = atof(line.substr(p + 1).c_str());
-                p = line.find("[", p + 1);
-            }
-            else
-            {
-                edge.v1 = edge.v2;
-            }
-            edge.v2.first = atof(line.substr(p + 1).c_str());
-            p = line.find(",", p + 1);
-            edge.v2.second = atof(line.substr(p + 1).c_str());
-            ret.myEdge.push_back(edge);
-        }
-        ret.myInput = line;
-        ret.display();
-        return ret;
-    }
     void extractLocation()
     {
-        for (auto &l : myInput)
-            myLineStringLocations.push_back(extractLocation(l));
+        for (auto &l : myInput) {
+            cLineString ls( l );
+            ls.extractEdges();
+            myLineStringLocations.push_back(ls);
+        }
     }
 
     void constructUniqueVertices()
@@ -120,6 +80,57 @@ private:
     std::vector<cLineString> myLineStringLocations;
     std::set<vertex_t> myVertexSet;
 };
+
+    void cEdge::display()
+    {
+        std::cout << v1.first << " " << v1.second << ", " 
+            << v2.first << " " << v2.second;
+    }
+    void cLineString::display()
+    {
+        std::cout << myInput 
+            << "\nhas edges:\n";
+        for (auto &e : myEdge)
+        {
+            e.display();
+            std::cout << "\n";
+        }
+        std::cout << "\n";
+    }
+
+      
+    void cLineString::extractEdges()
+    {
+        cEdge edge;
+        int p = myInput.find("[");
+        bool first = true;
+        while (true)
+        {
+            auto dbg = myInput.substr(p + 1);
+            p = myInput.find("[", p + 1);
+            if (p == -1)
+                break;
+            if (first)
+            {
+                first = false;
+                edge.v1.first = atof(myInput.substr(p + 1).c_str());
+                p = myInput.find(",", p + 1);
+                edge.v1.second = atof(myInput.substr(p + 1).c_str());
+                p = myInput.find("[", p + 1);
+            }
+            else
+            {
+                edge.v1 = edge.v2;
+            }
+            edge.v2.first = atof(myInput.substr(p + 1).c_str());
+            p = myInput.find(",", p + 1);
+            edge.v2.second = atof(myInput.substr(p + 1).c_str());
+            myEdge.push_back(edge);
+        }
+
+        display();
+    }
+ 
 
 main()
 {
