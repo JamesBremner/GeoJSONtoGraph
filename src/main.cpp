@@ -15,20 +15,24 @@ public:
 
     void display()
     {
-        //std::cout << x1 << " " << y1 << ", " << x2 << " " << y2;
+        std::cout << v1.first << " " << v1.second << ", " 
+            << v2.first << " " << v2.second;
     }
 };
 class cLineString
 {
 public:
     std::vector<cEdge> myEdge;
+    std::string myInput;
 
     void display()
     {
+        std::cout << myInput 
+            << "\nhas edges:\n";
         for (auto &e : myEdge)
         {
             e.display();
-            std::cout << " => ";
+            std::cout << "\n";
         }
         std::cout << "\n";
     }
@@ -73,6 +77,7 @@ public:
             edge.v2.second = atof(line.substr(p + 1).c_str());
             ret.myEdge.push_back(edge);
         }
+        ret.myInput = line;
         ret.display();
         return ret;
     }
