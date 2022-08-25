@@ -2,16 +2,29 @@
 #include <fstream>
 #include <sstream>
 #include <iostream>
+#include <cmath>
 #include <vector>
 #include <algorithm>
 #include <set>
 
-typedef std::pair<double,double> vertex_t;
+class cVertex
+{
+public:
+    double x, y;
+    void display() const;
+
+    /** Comparator used by std::set
+     * 
+     * This will return false for both a,b and b.a
+     * if they are so close as to be considered identical
+     */
+    bool operator()(const cVertex &a, const cVertex &b) const;
+};
 
 class cEdge
 {
 public:
-    vertex_t v1, v2;
+    cVertex v1, v2;
 
     void display();
 };
@@ -21,9 +34,10 @@ public:
     std::vector<cEdge> myEdge;
     std::string myInput;
 
-    cLineString( const std::string& line)
-    : myInput( line )
-    {}
+    cLineString(const std::string &line)
+        : myInput(line)
+    {
+    }
     void display();
     void extractEdges();
 };
@@ -40,8 +54,9 @@ public:
     }
     void extractLocation()
     {
-        for (auto &l : myInput) {
-            cLineString ls( l );
+        for (auto &l : myInput)
+        {
+            cLineString ls(l);
             ls.extractEdges();
             myLineStringLocations.push_back(ls);
         }
@@ -69,68 +84,86 @@ public:
 
         // display unique vertices found
         std::cout << "unique vertices\n";
-        for( auto& v : myVertexSet )
+        for (auto &v : myVertexSet)
         {
-            std::cout << v.first <<" "<< v.second << "\n";
+            v.display();
+            std::cout << "\n";
         }
     }
 
 private:
     std::vector<std::string> myInput;
     std::vector<cLineString> myLineStringLocations;
-    std::set<vertex_t> myVertexSet;
+    std::set<cVertex, cVertex> myVertexSet;
 };
 
-    void cEdge::display()
+bool cVertex::operator()(const cVertex &a, const cVertex &b) const
+{
+    // check if the two vertices are so close that they can be considered identical
+    const double min = 0.001;
+    if (std::fabs(a.x - b.x) < min &&
+        fabs(a.y - b.y) < min)
+        return false;
+    else
+        // the vertices are not identical
+        // arbitrarily consider the the smaller x value to be the lesser vertex
+        return (a.x < b.x);
+}
+
+void cEdge::display()
+{
+    v1.display();
+    std::cout << ", ";
+    v2.display();
+    std::cout << "\n";
+}
+void cVertex::display() const
+{
+    std::cout << x << " " << y;
+}
+void cLineString::display()
+{
+    std::cout << myInput
+              << "\nhas edges:\n";
+    for (auto &e : myEdge)
     {
-        std::cout << v1.first << " " << v1.second << ", " 
-            << v2.first << " " << v2.second;
-    }
-    void cLineString::display()
-    {
-        std::cout << myInput 
-            << "\nhas edges:\n";
-        for (auto &e : myEdge)
-        {
-            e.display();
-            std::cout << "\n";
-        }
+        e.display();
         std::cout << "\n";
     }
+    std::cout << "\n";
+}
 
-      
-    void cLineString::extractEdges()
+void cLineString::extractEdges()
+{
+    cEdge edge;
+    int p = myInput.find("[");
+    bool first = true;
+    while (true)
     {
-        cEdge edge;
-        int p = myInput.find("[");
-        bool first = true;
-        while (true)
+        auto dbg = myInput.substr(p + 1);
+        p = myInput.find("[", p + 1);
+        if (p == -1)
+            break;
+        if (first)
         {
-            auto dbg = myInput.substr(p + 1);
-            p = myInput.find("[", p + 1);
-            if (p == -1)
-                break;
-            if (first)
-            {
-                first = false;
-                edge.v1.first = atof(myInput.substr(p + 1).c_str());
-                p = myInput.find(",", p + 1);
-                edge.v1.second = atof(myInput.substr(p + 1).c_str());
-                p = myInput.find("[", p + 1);
-            }
-            else
-            {
-                edge.v1 = edge.v2;
-            }
-            edge.v2.first = atof(myInput.substr(p + 1).c_str());
+            first = false;
+            edge.v1.x = atof(myInput.substr(p + 1).c_str());
             p = myInput.find(",", p + 1);
-            edge.v2.second = atof(myInput.substr(p + 1).c_str());
-            myEdge.push_back(edge);
+            edge.v1.y = atof(myInput.substr(p + 1).c_str());
+            p = myInput.find("[", p + 1);
         }
-
-        display();
+        else
+        {
+            edge.v1 = edge.v2;
+        }
+        edge.v2.x = atof(myInput.substr(p + 1).c_str());
+        p = myInput.find(",", p + 1);
+        edge.v2.y = atof(myInput.substr(p + 1).c_str());
+        myEdge.push_back(edge);
     }
- 
+
+    display();
+}
 
 main()
 {
