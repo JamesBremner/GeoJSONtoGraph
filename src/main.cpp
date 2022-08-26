@@ -10,15 +10,20 @@
 class cVertex
 {
 public:
-    double x, y;
+    double x, y; // location
+    int myIndex; // index
+
     void display() const;
 
-    /** Comparator used by std::set
+    /** Assign unique vertex index
+     * @param[in] vertexVector unique vertices discovered so far
      * 
-     * This will return false for both a,b and b.a
-     * if they are so close as to be considered identical
+     * Identically located vertices will be assigned the same index
      */
-    bool operator()(const cVertex &a, const cVertex &b) const;
+    void indexer(std::vector<cVertex>& vertexVector);
+
+    /// Return true if they are so close as to be considered identical
+    bool operator==(const cVertex &other) const;
 };
 
 class cEdge
@@ -58,68 +63,35 @@ public:
         {
             cLineString ls(l);
             ls.extractEdges();
-            myLineStringLocations.push_back(ls);
+            myLineString.push_back(ls);
         }
     }
 
-    void constructUniqueVertices()
-    {
-        // loop over all line string locations
-        for (auto &l : myLineStringLocations)
-        {
-            // loop over edges in string location
-            bool first = true;
-            for (auto &e : l.myEdge)
-            {
-                if (first)
-                {
-                    first = false;
-                    // save, dropping duplicates, the first vertex of the first edge
-                    myVertexSet.insert(e.v1);
-                }
-                // save, dropping duplicates, the second vertex
-                myVertexSet.insert(e.v2);
-            }
-        }
-
-        // display unique vertices found
-        std::cout << "unique vertices\n";
-        for (auto &v : myVertexSet)
-        {
-            v.display();
-            std::cout << "\n";
-        }
-    }
+    void indexUniqueVertices();
 
 private:
     std::vector<std::string> myInput;
-    std::vector<cLineString> myLineStringLocations;
-    std::set<cVertex, cVertex> myVertexSet;
+    std::vector<cLineString> myLineString;
 };
 
-bool cVertex::operator()(const cVertex &a, const cVertex &b) const
+bool cVertex::operator==(const cVertex &other) const
 {
     // check if the two vertices are so close that they can be considered identical
     const double min = 0.001;
-    if (std::fabs(a.x - b.x) < min &&
-        fabs(a.y - b.y) < min)
-        return false;
-    else
-        // the vertices are not identical
-        // arbitrarily consider the the smaller x value to be the lesser vertex
-        return (a.x < b.x);
+    return (std::fabs(x - other.x) < min &&
+            fabs(y - other.y) < min);
 }
 
 void cEdge::display()
 {
     v1.display();
-    std::cout << ", ";
+    std::cout << " to ";
     v2.display();
     std::cout << "\n";
 }
 void cVertex::display() const
 {
-    std::cout << x << " " << y;
+    std::cout << myIndex << " (" << x << " " << y << ")";
 }
 void cLineString::display()
 {
@@ -128,7 +100,6 @@ void cLineString::display()
     for (auto &e : myEdge)
     {
         e.display();
-        std::cout << "\n";
     }
     std::cout << "\n";
 }
@@ -165,12 +136,61 @@ void cLineString::extractEdges()
     display();
 }
 
+void cVertex::indexer(std::vector<cVertex>& vertexVector)
+{
+    auto it = std::find(
+        vertexVector.begin(),
+        vertexVector.end(),
+        *this);
+    if (it == vertexVector.end())
+    {
+        // new unique vertex
+        myIndex = vertexVector.size();
+        vertexVector.push_back(*this);
+    }
+    else
+    {
+        // duplicate vertex
+        myIndex = it->myIndex;
+    }
+}
+
+void cSolution::indexUniqueVertices()
+{
+     std::vector<cVertex> vertexVector;
+
+    // loop over all line strings
+    for (auto &l : myLineString)
+    {
+        // loop over edges in line string
+        for (auto &e : l.myEdge)
+        {
+            // index the vertices
+            e.v1.indexer(vertexVector);
+            e.v2.indexer(vertexVector);
+        }
+    }
+
+    // display unique vertices found
+    std::cout << "unique vertices\n";
+    for (auto &v : vertexVector)
+    {
+        v.display();
+        std::cout << "\n";
+    }
+
+    for (auto &l : myLineString)
+    {
+        l.display();
+    }
+}
+
 main()
 {
     cSolution S;
     S.generateSmallTest();
     S.extractLocation();
-    S.constructUniqueVertices();
+    S.indexUniqueVertices();
 
     return 0;
 }
